@@ -1,0 +1,69 @@
+name: Scrape latest data
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    # The data is refreshed daily.
+    - cron:  '0 0 * * *'
+
+jobs:
+  scheduled:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Requires multiple IDs
+          # - file: "title.akas.tsv"
+          #   id: "titleId"
+          - file: "title.basics"
+            id: "tconst"
+          - file: "title.crew"
+            id: "tconst"
+          - file: "title.episode"
+            id: "tconst"
+          # Requires multiple IDs
+          # - file: "title.principals.tsv"
+          #  id: "tconst"
+          - file: "title.ratings"
+            id: "tconst"
+          - file: "name.basics"
+            id: "nconst"
+    steps:
+    - name: Check out this repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - uses: actions/cache@v2
+      name: Configure pip caching
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    - name: Install Python dependencies
+      run: |-
+        pip install -r requirements.txt
+    - name: Fetch latest data
+      env:
+        FILE: ${{matrix.file}}
+        ID: ${{matrix.id}}
+      run: |-
+        if [[ -f "$FILE.tsv" ]]; then cp "$FILE.tsv" "$FILE-old.tsv"; fi;
+        curl "https://datasets.imdbws.com/$FILE.tsv.gz" | gunzip > "$FILE.tsv"
+        timestamp=$(date -u)
+        printf "$FILE: " > message.txt
+        if [[ -f "$FILE-old.tsv" ]]; then csv-diff "$FILE-old.tsv" "$FILE.tsv" --format=tsv --key="$ID" >> message.txt; else echo "Latest data: ${timestamp}" >> message.txt fi;
+        git-history file imdb.db "$FILE.tsv" --branch master --namespace "$FILE" --id "$ID"
+    - name: Commit and push if it changed
+      run: |-
+        git config user.name "Automated"
+        git config user.email "actions@users.noreply.github.com"
+        git add "$FILE.tsv" imdb.db
+        
+        git commit -F message.txt || exit 0
+        git push
