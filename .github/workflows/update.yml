@@ -58,7 +58,7 @@ jobs:
         timestamp=$(date -u)
         printf "$FILE: " > message.txt
         if [[ -f "$FILE-old.tsv" ]]; then csv-diff "$FILE-old.tsv" "$FILE.tsv" --format=tsv --key="$ID" >> message.txt; else echo "Latest data: ${timestamp}" >> message.txt; fi
-        git-history file imdb.db "$FILE.tsv" --branch master --namespace "$FILE" --id "$ID"
+        git-history file imdb.db "$FILE.tsv" --branch master --csv --namespace "$FILE" --id "$ID"
     - name: Commit and push if it changed
       env:
         FILE: ${{matrix.file}}
