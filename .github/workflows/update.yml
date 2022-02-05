@@ -53,11 +53,11 @@ jobs:
         FILE: ${{matrix.file}}
         ID: ${{matrix.id}}
       run: |-
-        if [[ -f "$FILE.tsv" ]]; then cp "$FILE.tsv" "$FILE-old.tsv"; fi;
+        if [[ -f "$FILE.tsv" ]]; then cp "$FILE.tsv" "$FILE-old.tsv"; fi
         curl "https://datasets.imdbws.com/$FILE.tsv.gz" | gunzip > "$FILE.tsv"
         timestamp=$(date -u)
         printf "$FILE: " > message.txt
-        if [[ -f "$FILE-old.tsv" ]]; then csv-diff "$FILE-old.tsv" "$FILE.tsv" --format=tsv --key="$ID" >> message.txt; else echo "Latest data: ${timestamp}" >> message.txt fi;
+        if [[ -f "$FILE-old.tsv" ]]; then csv-diff "$FILE-old.tsv" "$FILE.tsv" --format=tsv --key="$ID" >> message.txt; else echo "Latest data: ${timestamp}" >> message.txt; fi
         git-history file imdb.db "$FILE.tsv" --branch master --namespace "$FILE" --id "$ID"
     - name: Commit and push if it changed
       run: |-
