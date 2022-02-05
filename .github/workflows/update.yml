@@ -60,6 +60,8 @@ jobs:
         if [[ -f "$FILE-old.tsv" ]]; then csv-diff "$FILE-old.tsv" "$FILE.tsv" --format=tsv --key="$ID" >> message.txt; else echo "Latest data: ${timestamp}" >> message.txt; fi
         git-history file imdb.db "$FILE.tsv" --branch master --namespace "$FILE" --id "$ID"
     - name: Commit and push if it changed
+      env:
+        FILE: ${{matrix.file}}
       run: |-
         git config user.name "Automated"
         git config user.email "actions@users.noreply.github.com"
